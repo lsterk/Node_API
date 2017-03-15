@@ -12,8 +12,10 @@ winston.level = "debug"
 app.set('port', (process.env.PORT || 5000))
 app.use(express.static(__dirname + '/public'))
 
+// parse application/x-www-form-urlencoded
+var urlParser = (bodyParser.urlencoded({ extended: false }))
 // parse application/json
-app.use(bodyParser.json())
+var jsonParser = (bodyParser.json())
 
 app.get('/', function(request, response) {
 	winston.info("Connection accepted from " + request.ip)
@@ -25,16 +27,40 @@ app.get('/test', function(request, response) {
 	response.send('Test server running')
 })
 
-app.get('/user/:uID', function(req, res) {
-	// send a 400 error if there isn't any user data uploaded, like auth key
-	if (!req.body) return res.sendStatus(400)
+app.get('/user/:uID', jsonParser, function(req, res) {
 	winston.info("Attempting to get data from " + req.params.uID)
+	// send a 400 error if there isn't any user data uploaded, like auth key
+	if (!req.body.accessToken){
+		winston.debug("Request did not have an Access Token included")
+		return res.status(400).json({"body" : JSON.stringify(req.body), "error" : "No AT"});
+	}
+	// authenticate the accessToken to see if it matches
+	MongoClient.connect(mongodb_url, function(err, db) {
+		// Connect to the collection of access tokens
+		var col = db.collection('access_token');
+		// check to see if the access token exists
+		col.findOne({"accessToken" : req.body.accessToken, "uID" : req.params.uID}, function (err, doc){
+			if (!doc) {
+				winston.info("Unauthorized user attempting to access user " + req.params.uID);
+				return res.sendStatus(401);
+			}
+			if (err) winston.error("Error in checking token:" + err);
+		})
+	});
 	res.setHeader('Content-Type', 'application/json');
 	res.status(201).json({"uID" : req.params.uID, "username" : "Testy"})
 })
 
-app.post('/login/:uID', function(req, res) {
-	// check to make sure LOGIN action succeeds
+app.post('/login/:uID', jsonParser, function(req, res) {
+	// check supplied credentials
+	if (!req.body.PIN) return res.sendStatus(400);
+	if (!req.body.apiKey) return res.sendStatus(400);
+
+	// check that the API Key is legit
+	// checkAPIKey(req.body.apiKey);
+
+	// check that the PIN is legit and corresponds to the user ID
+	// tryPIN(req.params.uID, req.body.PIN);
 
 	// create an accessToken to register to the account
 	var accessToken = uuidV1();
@@ -43,29 +69,23 @@ app.post('/login/:uID', function(req, res) {
 
 	// Connect using MongoClient
 	MongoClient.connect(mongodb_url, function(err, db) {
-		// Create a collection we want to drop later
+		// Connect to the collection of access tokens
 		var col = db.collection('access_token');
-		// add the access token to the database
+		// add the new access token to the database
 		col.insertOne({"accessToken" : accessToken, "uID" : req.params.uID, "created" : new Date()})
-		// // Show that duplicate records got dropped
-		// col.find({}).toArray(function(err, items) {
-		//   test.equal(null, err);
-		//   test.equal(4, items.length);
-		//   db.close();
-		// });
 	});
 
+	// return the newly created access token
 	res.setHeader('Content-Type', 'application/json');
-	res.json({"uID" : req.params.uID, "accessToken" : accessToken})
+	res.status(201).json({"uID" : req.params.uID, "accessToken" : accessToken})
 
 })
 
-app.get('/*', function(request, response) {
-	winston.warn("Unknown request: " + request.path)
-	//console.log("Weird request coming in on " + request.route)
+app.all('/*', function(request, response) {
+	winston.debug("Unknown request: " + request.method + " "+ request.path)
 	response.status(404).send('404 Error: path ' + request.path + ' is not a valid path\n')
 })
 
 app.listen(app.get('port'), function() {
-  winston.debug("Node app is running at localhost:" + app.get('port'))
+  winston.info("Node app is running at localhost:" + app.get('port'))
 })

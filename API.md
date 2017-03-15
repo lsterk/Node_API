@@ -89,7 +89,7 @@ HTTP Status Code: 401
   "apiKeyAccepted" : true,
   "pinAccepted" : false
 }
-
+```
 
 
 ## Authenticated User Actions
@@ -97,6 +97,12 @@ HTTP Status Code: 401
 ### GET /user/:uID
 
 Retrieves all relevant user data
+
+| HTTP Status Code | Status Explanation  |
+| :---------------:  | :---------------- |
+| 200 | Authentication successful, data sent back in body|
+|400 | API Key or PIN not included |
+| 401 | AccessToken did not exist or match supplied uID
 
 submission example:
 
