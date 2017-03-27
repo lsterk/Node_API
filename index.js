@@ -9,6 +9,9 @@ var winston = require('winston')
 winston.add(winston.transports.File, {filename : "/var/log/kiosk/api.log"})
 winston.level = "debug"
 
+// other units in package
+var auth = require('./controller/auth')
+
 app.set('port', (process.env.PORT || 5000))
 app.use(express.static(__dirname + '/public'))
 
@@ -22,9 +25,40 @@ app.get('/', function(request, response) {
   response.send('Hello, user! Your IP address is ' + request.ip)
 })
 
-app.get('/test', function(request, response) {
-	winston.info("Test requested from client at " + request.ip)
-	response.send('Test server running')
+app.all('/test', function(request, response) {
+	var user_ip = request.ip.split(':').pop();
+	winston.info("Test requested from client at " + user_ip)
+	response.send('Test server running, ' + request.ip)
+})
+
+app.all('/test/apiKey', jsonParser, function (req, res) {
+	var apiKey = req.body.apiKey;
+	var ipAddr = req.ip;
+	auth.checkAPI(apiKey, ipAddr, mongodb_url, function(successful){
+		if (result){
+			winston.debug("Test auth successful")
+			res.send("Test auth successful")
+		}
+		else{
+			winston.debug("Test auth failed")
+			res.status(401).send("Test auth failed")
+		}
+	})
+})
+
+app.all('/test/accessToken', sonParser, function (req, res) {
+	var accessToken = req.body.accessToken;
+	var ipAddr = req.ip;
+	auth.checkAPI(apiKey, ipAddr, mongodb_url, function(successful){
+		if (result){
+			winston.debug("Test auth successful")
+			res.send("Test auth successful")
+		}
+		else{
+			winston.debug("Test auth failed")
+			res.status(401).send("Test auth failed")
+		}
+	})
 })
 
 app.get('/user/:uID', jsonParser, function(req, res) {
@@ -34,6 +68,11 @@ app.get('/user/:uID', jsonParser, function(req, res) {
 		winston.debug("Request did not have an Access Token included")
 		return res.status(400).json({"body" : JSON.stringify(req.body), "error" : "No AT"});
 	}
+
+	/*
+	if (!req.body.apiKey) return res.sendStatus(400);
+
+	*/
 	// authenticate the accessToken to see if it matches
 	MongoClient.connect(mongodb_url, function(err, db) {
 		// Connect to the collection of access tokens

@@ -101,14 +101,15 @@ Retrieves all relevant user data
 | HTTP Status Code | Status Explanation  |
 | :---------------:  | :---------------- |
 | 200 | Authentication successful, data sent back in body|
-|400 | API Key or PIN not included |
+|400 | API Key or AccessToken  not included|
 | 401 | AccessToken did not exist or match supplied uID
 
 submission example:
 
 ```javascript
 {
-  "accessToken" : <accessToken>
+  "accessToken" : String accessToken,
+  "apiKey" : String apiKey
 }
 ```
 
