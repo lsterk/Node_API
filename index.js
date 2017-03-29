@@ -11,6 +11,7 @@ winston.level = "debug"
 
 // other units in package
 var auth = require('./controller/auth')
+var test_gen = require('./controller/test_gen')
 
 app.set('port', (process.env.PORT || 5000))
 app.use(express.static(__dirname + '/public'))
@@ -46,10 +47,16 @@ app.all('/test/apiKey', jsonParser, function (req, res) {
 	})
 })
 
-app.all('/test/accessToken', sonParser, function (req, res) {
+app.all('/test/accessToken', jsonParser, function (req, res) {
 	var accessToken = req.body.accessToken;
+	var apiKey = req.body.apiKey;
 	var ipAddr = req.ip;
-	auth.checkAPI(apiKey, ipAddr, mongodb_url, function(successful){
+	if (!accessToken || !apiKey || !ipAddr){
+		res.status(400).send("Missing accessToken, apiKey, or ipAddr")
+		winston.debug("Test accessToken is missing body pieces")
+		return;
+	}
+	auth.checkAccessToken(accessToken, req.params.uID, mongodb_url, function(successful){
 		if (result){
 			winston.debug("Test auth successful")
 			res.send("Test auth successful")
@@ -61,12 +68,38 @@ app.all('/test/accessToken', sonParser, function (req, res) {
 	})
 })
 
+app.get('/test/user/:uID', jsonParser, function(req, res) {
+	winston.info("Test data grab for user " + req.params.uID)
+	res.status(200).json(
+	{
+	  "uID" : req.params.uID,
+	  "uName" : "ljs34",
+	  "name" : "Sterk, Landon",
+		"mealPlan" : test_gen.randomMealPlan(),
+	  "bonusBucks" : test_gen.randomBonusBucks(),
+		"isLiveData" : false,
+		"updated" : test_gen.randomDate(300)
+	});
+})
+
+app.post('/test/login/:uID', jsonParser, function(req, res){
+	winston.info("Test login for user " + req.params.uID);
+	var accessToken = uuidV1();
+	res.status(201).json(
+		{
+		  "uID" : req.params.uID ,
+		  "accessToken" : accessToken
+		}
+	)
+})
+
+
 app.get('/user/:uID', jsonParser, function(req, res) {
 	winston.info("Attempting to get data from " + req.params.uID)
 	// send a 400 error if there isn't any user data uploaded, like auth key
 	if (!req.body.accessToken){
 		winston.debug("Request did not have an Access Token included")
-		return res.status(400).json({"body" : JSON.stringify(req.body), "error" : "No AT"});
+		return res.status(400).json({"error" : "No AT"});
 	}
 
 	/*
@@ -74,20 +107,18 @@ app.get('/user/:uID', jsonParser, function(req, res) {
 
 	*/
 	// authenticate the accessToken to see if it matches
-	MongoClient.connect(mongodb_url, function(err, db) {
-		// Connect to the collection of access tokens
-		var col = db.collection('access_token');
-		// check to see if the access token exists
-		col.findOne({"accessToken" : req.body.accessToken, "uID" : req.params.uID}, function (err, doc){
-			if (!doc) {
-				winston.info("Unauthorized user attempting to access user " + req.params.uID);
-				return res.sendStatus(401);
-			}
-			if (err) winston.error("Error in checking token:" + err);
-		})
-	});
-	res.setHeader('Content-Type', 'application/json');
-	res.status(201).json({"uID" : req.params.uID, "username" : "Testy"})
+	auth.checkAccessToken(req.body.accessToken, req.params.uID, mongodb_url, function(successful){
+		if (successful){
+			// authenticator checks out just fine
+			res.setHeader('Content-Type', 'application/json');
+			res.status(201).json({"uID" : req.params.uID, "username" : "Testy"})
+			return;
+		}
+		else{
+			// not authenticated
+			res.status(401).send("Access Token denied");
+		}
+	})
 })
 
 app.post('/login/:uID', jsonParser, function(req, res) {
