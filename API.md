@@ -17,6 +17,83 @@ Reply:
 Test server running
 ```
 
+### POST /test/login/:uID
+
+Testing method to receive a dummy UUIDv1 object for a user
+
+Note that the UUIDv1 object returned is NOT entered into the access database
+
+Format of reply:
+
+```js
+{
+	  "uID" : String,
+	  "accessToken" : String
+}
+```
+
+example:
+```
+// request
+curl -X POST http://localhost:5000/test/login/1234
+
+//Response
+//STATUS: 201
+{
+  "uID" : "1234",
+  "accessToken" : "0ae0a4b0-1490-11e7-bb9a-09c0a1761819"
+}
+
+```
+
+### GET /test/user/:uID
+Test method for acquiring dummy data for a user
+
+Reply format:
+```js
+{
+	  "uID" : String,
+	  "uName" : String,
+	  "name" : String,
+		"mealPlan" : {
+      "count" : Number,
+      "isWeekly" : Boolean
+    },
+	  "bonusBucks" : Number,
+		"isLiveData" : Boolean,
+		"updated" : Date
+}
+```
+Example:
+
+```
+// request
+curl -X GET http://localhost:5000/test/user/1234
+
+//Response
+//STATUS: 200
+{
+  "uID":"1234",
+  "uName":"ljs34",
+  "name":"Sterk,Landon",
+  "mealPlan":
+  {
+    "count":51,
+    "isWeekly":false
+    },
+  "bonusBucks":7.25,
+  "isLiveData":false,
+  "updated":"Wed Mar 29 2017 11:05:33 GMT-0400 (EDT)"
+}
+
+```
+
+
+## Authenticated User Actions
+
+All of the below actions necessitate having an active, valid API Key, and possibly
+more authentication factors (e.g. AccessToken)
+
 ### POST /login/:uID
 
 To receive an Access Token for a particular user, upload a JSON-style body with
@@ -91,8 +168,6 @@ HTTP Status Code: 401
 }
 ```
 
-
-## Authenticated User Actions
 
 ### GET /user/:uID
 

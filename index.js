@@ -21,10 +21,12 @@ var urlParser = (bodyParser.urlencoded({ extended: false }))
 // parse application/json
 var jsonParser = (bodyParser.json())
 
+/*
 app.get('/', function(request, response) {
 	winston.info("Connection accepted from " + request.ip)
   response.send('Hello, user! Your IP address is ' + request.ip)
 })
+*/
 
 app.all('/test', function(request, response) {
 	var user_ip = request.ip.split(':').pop();
@@ -32,6 +34,7 @@ app.all('/test', function(request, response) {
 	response.send('Test server running, ' + request.ip)
 })
 
+/*
 app.all('/test/apiKey', jsonParser, function (req, res) {
 	var apiKey = req.body.apiKey;
 	var ipAddr = req.ip;
@@ -46,7 +49,9 @@ app.all('/test/apiKey', jsonParser, function (req, res) {
 		}
 	})
 })
+*/
 
+/*
 app.all('/test/accessToken', jsonParser, function (req, res) {
 	var accessToken = req.body.accessToken;
 	var apiKey = req.body.apiKey;
@@ -67,6 +72,7 @@ app.all('/test/accessToken', jsonParser, function (req, res) {
 		}
 	})
 })
+*/
 
 app.get('/test/user/:uID', jsonParser, function(req, res) {
 	winston.info("Test data grab for user " + req.params.uID)
