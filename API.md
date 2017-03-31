@@ -1,7 +1,7 @@
 # Calvin Information Center API Guide
 **Landon Sterk**
 
-**v 0.1**
+**v 0.2**
 
 ## Public Actions
 
@@ -9,11 +9,12 @@
 
 Testing method to determine current server status
 
-Request: no formatting needed
+Request: no body needed
 
 Reply:
 
 ```html
+//STATUS: 200
 Test server running
 ```
 
@@ -57,7 +58,8 @@ Reply format:
 	  "name" : String,
 		"mealPlan" : {
       "count" : Number,
-      "isWeekly" : Boolean
+      "isWeekly" : Boolean,
+			"max" : Number
     },
 	  "bonusBucks" : Number,
 		"isLiveData" : Boolean,

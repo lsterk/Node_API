@@ -28,10 +28,15 @@ app.get('/', function(request, response) {
 })
 */
 
+/*
+Blank test method for the API
+Just returns a simple string when run
+PATH: /test
+*/
 app.all('/test', function(request, response) {
 	var user_ip = request.ip.split(':').pop();
 	winston.info("Test requested from client at " + user_ip)
-	response.send('Test server running, ' + request.ip)
+	response.send('Test server running')
 })
 
 /*
@@ -74,6 +79,11 @@ app.all('/test/accessToken', jsonParser, function (req, res) {
 })
 */
 
+/*
+Test method for getting dummy data for a particular user
+Populates all specific fields with randomized data
+
+*/
 app.get('/test/user/:uID', jsonParser, function(req, res) {
 	winston.info("Test data grab for user " + req.params.uID)
 	res.status(200).json(
@@ -88,6 +98,11 @@ app.get('/test/user/:uID', jsonParser, function(req, res) {
 	});
 })
 
+/*
+Test method for logging in
+Dummy method returns a new UUIDv1 token
+Note that
+*/
 app.post('/test/login/:uID', jsonParser, function(req, res){
 	winston.info("Test login for user " + req.params.uID);
 	var accessToken = uuidV1();

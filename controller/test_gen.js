@@ -11,7 +11,7 @@ function generateDate(maxSecondsRandom){
   return Date(now.getTime() - secsOffset * 1000)
 }
 
-function bonusBucks(){
+function generateBonusBucks(){
   // between 0 and $60
   var cents = Math.random() * 6000;
   return (Math.floor(cents))/100
@@ -20,15 +20,17 @@ function bonusBucks(){
 function generateMealPlan(){
   if (Math.round(Math.random())){
     var isWeekly = true;
-    var mealsLeft = Math.round(Math.random() * 21);
-    return {"count" : mealsLeft, "isWeekly" : isWeekly}
+    var maxMeals = [10, 15, 21][Math.round(Math.random() * 2)]
+    var mealsLeft = Math.round(Math.random() * maxMeals);
+    return {"count" : mealsLeft, "isWeekly" : isWeekly, "maxMeals" : maxMeals}
   }
   // else
   var isWeekly = false;
-  var mealsLeft = Math.round(Math.random() * 60);
-  return {"count" : mealsLeft, "isWeekly" : isWeekly}
+  var maxMeals = [10, 15, 21][Math.round(Math.random() * 2)]
+  var mealsLeft = Math.round(Math.random() * maxMeals);
+  return {"count" : mealsLeft, "maxMeals": maxMeals, "isWeekly" : isWeekly}
 }
 
 module.exports.randomDate = generateDate;
-module.exports.randomBonusBucks = bonusBucks;
+module.exports.randomBonusBucks = generateBonusBucks;
 module.exports.randomMealPlan = generateMealPlan;
