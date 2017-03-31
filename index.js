@@ -12,7 +12,9 @@ winston.level = "debug"
 // other units in package
 var auth = require('./controller/auth')
 var test_gen = require('./controller/test_gen')
+// var schema = require('./model/schemas').schema;
 
+// assignes the app to listen on default port of 5000, if not env PORT value
 app.set('port', (process.env.PORT || 5000))
 app.use(express.static(__dirname + '/public'))
 
@@ -21,12 +23,6 @@ var urlParser = (bodyParser.urlencoded({ extended: false }))
 // parse application/json
 var jsonParser = (bodyParser.json())
 
-/*
-app.get('/', function(request, response) {
-	winston.info("Connection accepted from " + request.ip)
-  response.send('Hello, user! Your IP address is ' + request.ip)
-})
-*/
 
 /*
 Blank test method for the API
@@ -39,50 +35,11 @@ app.all('/test', function(request, response) {
 	response.send('Test server running')
 })
 
-/*
-app.all('/test/apiKey', jsonParser, function (req, res) {
-	var apiKey = req.body.apiKey;
-	var ipAddr = req.ip;
-	auth.checkAPI(apiKey, ipAddr, mongodb_url, function(successful){
-		if (result){
-			winston.debug("Test auth successful")
-			res.send("Test auth successful")
-		}
-		else{
-			winston.debug("Test auth failed")
-			res.status(401).send("Test auth failed")
-		}
-	})
-})
-*/
-
-/*
-app.all('/test/accessToken', jsonParser, function (req, res) {
-	var accessToken = req.body.accessToken;
-	var apiKey = req.body.apiKey;
-	var ipAddr = req.ip;
-	if (!accessToken || !apiKey || !ipAddr){
-		res.status(400).send("Missing accessToken, apiKey, or ipAddr")
-		winston.debug("Test accessToken is missing body pieces")
-		return;
-	}
-	auth.checkAccessToken(accessToken, req.params.uID, mongodb_url, function(successful){
-		if (result){
-			winston.debug("Test auth successful")
-			res.send("Test auth successful")
-		}
-		else{
-			winston.debug("Test auth failed")
-			res.status(401).send("Test auth failed")
-		}
-	})
-})
-*/
 
 /*
 Test method for getting dummy data for a particular user
 Populates all specific fields with randomized data
-
+Used for development purposes only
 */
 app.get('/test/user/:uID', jsonParser, function(req, res) {
 	winston.info("Test data grab for user " + req.params.uID)
@@ -101,7 +58,7 @@ app.get('/test/user/:uID', jsonParser, function(req, res) {
 /*
 Test method for logging in
 Dummy method returns a new UUIDv1 token
-Note that
+Used for development purposes only
 */
 app.post('/test/login/:uID', jsonParser, function(req, res){
 	winston.info("Test login for user " + req.params.uID);
@@ -115,6 +72,12 @@ app.post('/test/login/:uID', jsonParser, function(req, res){
 })
 
 
+/*
+Actual getUser command
+Authenticates the accessToken against the apiKey and user ID
+Not pulling data yet, but will do actual authenticator checks
+For debugging, use GET /test/user/:uID instead
+*/
 app.get('/user/:uID', jsonParser, function(req, res) {
 	winston.info("Attempting to get data from " + req.params.uID)
 	// send a 400 error if there isn't any user data uploaded, like auth key
@@ -122,11 +85,11 @@ app.get('/user/:uID', jsonParser, function(req, res) {
 		winston.debug("Request did not have an Access Token included")
 		return res.status(400).json({"error" : "No AT"});
 	}
+	if (!req.body.apiKey){
+		winston.debug("Request did not have an API Key included")
+		return res.status(400).json({"error" : "No API Key"});
+	}
 
-	/*
-	if (!req.body.apiKey) return res.sendStatus(400);
-
-	*/
 	// authenticate the accessToken to see if it matches
 	auth.checkAccessToken(req.body.accessToken, req.params.uID, mongodb_url, function(successful){
 		if (successful){
@@ -136,12 +99,17 @@ app.get('/user/:uID', jsonParser, function(req, res) {
 			return;
 		}
 		else{
-			// not authenticated
+			// not authenticated -- no userID + accessToken + API Key combination
 			res.status(401).send("Access Token denied");
 		}
 	})
 })
 
+
+/*
+POST /login/:uID will generate an access Token
+Currently iffy, since PIN's probably won't be Used
+*/
 app.post('/login/:uID', jsonParser, function(req, res) {
 	// check supplied credentials
 	if (!req.body.PIN) return res.sendStatus(400);
@@ -154,29 +122,25 @@ app.post('/login/:uID', jsonParser, function(req, res) {
 	// tryPIN(req.params.uID, req.body.PIN);
 
 	// create an accessToken to register to the account
-	var accessToken = uuidV1();
-	// create access token reference in database
-
-
-	// Connect using MongoClient
-	MongoClient.connect(mongodb_url, function(err, db) {
-		// Connect to the collection of access tokens
-		var col = db.collection('access_token');
-		// add the new access token to the database
-		col.insertOne({"accessToken" : accessToken, "uID" : req.params.uID, "created" : new Date()})
-	});
-
-	// return the newly created access token
-	res.setHeader('Content-Type', 'application/json');
-	res.status(201).json({"uID" : req.params.uID, "accessToken" : accessToken})
-
+	// note that this also adds the AT to the database
+	auth.AccessToken(req.body.apiKey, req.params.uID, mongodb_url, function(accessToken){
+		// return the newly created access token
+		res.setHeader('Content-Type', 'application/json');
+		res.status(201).json({"uID" : req.params.uID, "accessToken" : accessToken})
+	})
 })
 
+
+/*
+404 Error listener so that no request will go unanswered without being logged
+*/
 app.all('/*', function(request, response) {
 	winston.debug("Unknown request: " + request.method + " "+ request.path)
 	response.status(404).send('404 Error: path ' + request.path + ' is not a valid path\n')
 })
 
+
+// have the app start listening!
 app.listen(app.get('port'), function() {
   winston.info("Node app is running at localhost:" + app.get('port'))
 })

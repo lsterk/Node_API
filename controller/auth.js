@@ -1,4 +1,5 @@
 var MongoClient = require('mongodb').MongoClient;
+const uuidV1 = require('uuid/v1');
 
 /*
 checkAPIKey will check if a particular apiKey and ipAddr match in the master db
@@ -33,7 +34,7 @@ function checkAPIKey(apiKey, ipAddr, mongodb_url, callback){
 	});
 }
 
-function checkAccessToken(accessToken, uID, mongodb_url, callback){
+function checkAccessToken(accessToken, uID, apiKey, mongodb_url, callback){
   MongoClient.connect(mongodb_url, function(err, db) {
 		// Connect to the collection of api keys
 
@@ -41,7 +42,8 @@ function checkAccessToken(accessToken, uID, mongodb_url, callback){
 		// check to see if the access token exists
 		col.findOne({
       "accessToken" : accessToken,
-      "uID" : uID}, function (err, doc){
+      "uID" : uID,
+      "apiKey" : apiKey}, function (err, doc){
 			if (!doc) {
         // no document was found, so it wasn't a match
 				//winston.info("Unauthorized user attempting to access user " + req.params.uID);
@@ -57,5 +59,23 @@ function checkAccessToken(accessToken, uID, mongodb_url, callback){
 	});
 }
 
+/*
+Method for creating an access token and storing it in mongodb
+*/
+function createAccessToken(apiKey, uID, mongodb_url, callback) {
+  var accessToken = uuidV1();
+  MongoClient.connect(mongodb_url, function(err, db) {
+    if (err) throw err;
+    var col = db.collection('acces_token');
+    col.insertOne({"accessToken" : accessToken, "apiKey" : apiKey,
+    "uID" : uID, "created" : new Date()}, {}, function(err_write, db_write){
+      if (err_write) throw err;
+    });
+  });
+  callback(accessToken);
+  return accessToken;
+}
+
 module.exports.checkAPI = checkAPIKey;
 module.exports.checkAccessToken = checkAccessToken;
+module.exports.AccessToken = createAccessToken;
