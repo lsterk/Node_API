@@ -26,7 +26,7 @@ function generateMealPlan(){
   }
   // else
   var isWeekly = false;
-  var maxMeals = [10, 15, 21][Math.round(Math.random() * 2)]
+  var maxMeals = [30, 60, 100, 150][Math.round(Math.random() * 3)]
   var mealsLeft = Math.round(Math.random() * maxMeals);
   return {"count" : mealsLeft, "maxMeals": maxMeals, "isWeekly" : isWeekly}
 }
