@@ -7,10 +7,10 @@ var urlParser = (bodyParser.urlencoded({ extended: false }))
 var jsonParser = (bodyParser.json())
 const uuidV1 = require('uuid/v1')
 var MongoClient = require('mongodb').MongoClient
-// Connection url
 
 var winston = require('winston')
 winston.add(winston.transports.File, {filename : "/var/log/kiosk/api.log"})
+//winston.transports.console.level = 'debug';
 winston.level = "debug"
 module.exports.logger = winston;
 
@@ -21,7 +21,6 @@ var test_gen = require('./controller/test_gen')
 
 // assignes the app to listen on default port of 5000, if not env PORT value
 app.set('port', (process.env.PORT || 5000))
-app.use(express.static(__dirname + '/public'))
 
 // test branch
 var test_branch = require('./controller/routes/test')
@@ -30,54 +29,6 @@ app.use('/test', test_branch); // mounts test_branch sub app
 // build branch
 var build_branch = require('./controller/routes/build')
 app.use('/build', build_branch); // mounts build_branch sub app
-
-
-// /*
-// Blank test method for the API
-// Just returns a simple string when run
-// PATH: /test
-// */
-// app.all('/test', function(request, response) {
-// 	var user_ip = request.ip.split(':').pop();
-// 	winston.info("Test requested from client at " + user_ip)
-// 	response.send('Test server running')
-// })
-//
-//
-// /*
-// Test method for getting dummy data for a particular user
-// Populates all specific fields with randomized data
-// Used for development purposes only
-// */
-// app.get('/test/user/:uID', jsonParser, function(req, res) {
-// 	winston.info("Test data grab for user " + req.params.uID)
-// 	res.status(200).json(
-// 	{
-// 	  "uID" : req.params.uID,
-// 	  "uName" : "ljs34",
-// 	  "name" : "Sterk, Landon",
-// 		"mealPlan" : test_gen.randomMealPlan(),
-// 	  "bonusBucks" : test_gen.randomBonusBucks(),
-// 		"isLiveData" : false,
-// 		"updated" : test_gen.randomDate(300)
-// 	});
-// })
-//
-// /*
-// Test method for logging in
-// Dummy method returns a new UUIDv1 token
-// Used for development purposes only
-// */
-// app.post('/test/login/:uID', jsonParser, function(req, res){
-// 	winston.info("Test login for user " + req.params.uID);
-// 	var accessToken = uuidV1();
-// 	res.status(201).json(
-// 		{
-// 		  "uID" : req.params.uID ,
-// 		  "accessToken" : accessToken
-// 		}
-// 	)
-// })
 
 
 /*
@@ -140,6 +91,12 @@ app.post('/login/:uID', jsonParser, function(req, res) {
 
 
 /*
+Will serve static documents too, e.g. HTML file at root
+*/
+app.use(express.static(__dirname + '/public'))
+
+
+/*
 404 Error listener so that no request will go unanswered without being logged
 */
 app.all('/*', function(request, response) {
@@ -150,5 +107,5 @@ app.all('/*', function(request, response) {
 
 // have the app start listening!
 app.listen(app.get('port'), function() {
-  winston.info("Node app is running at localhost:" + app.get('port'))
+  winston.verbose("Node app is running at localhost:" + app.get('port'))
 })

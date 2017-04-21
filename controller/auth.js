@@ -25,12 +25,13 @@ function checkAPIKey(apiKey, ipAddr, callback){
 				//winston.info("Unauthorized user attempting to access user " + req.params.uID);
 				callback(false);
 			}
-			if (err) {
+			else if (err) {
         //winston.error("Error in checking token:" + err);
         callback(false);
       }
-      // doc was found and no error uncovered, so must be legit
-      callback(true);
+      else {
+        callback(true);
+      }// doc was found and no error uncovered, so must be legit
 		})
 	});
 }
@@ -80,6 +81,6 @@ function createAccessToken(apiKey, uID, callback) {
   return accessToken;
 }
 
-module.exports.checkAPI = checkAPIKey;
+module.exports.checkAPIKey = checkAPIKey;
 module.exports.checkAccessToken = checkAccessToken;
 module.exports.AccessToken = createAccessToken;

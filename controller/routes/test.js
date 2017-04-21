@@ -13,7 +13,7 @@ app is an Express instance that is used to host routes
 
 app.all('/', function(request, response) {
   var user_ip = request.ip.split(':').pop();
-  winston.info("Test requested from client at " + user_ip)
+  winston.debug("Test requested from client at " + user_ip)
   response.send('Test server running')
 })
 
@@ -24,8 +24,8 @@ Populates all specific fields with randomized data
 Used for development purposes only
 */
 app.get('/user/:uID', jsonParser, function(req, res) {
-  console.log("Test data grab for user " + req.params.uID)
-  res.status(200).json(
+  winston.debug("Test data grab for user " + req.params.uID)
+  res.status(200).jsonp(
     {
       "uID" : req.params.uID,
       "uName" : "ljs34",
@@ -43,9 +43,9 @@ Dummy method returns a new UUIDv1 token
 Used for development purposes only
 */
 app.post('/login/:uID', jsonParser, function(req, res){
-  console.log("Test login for user " + req.params.uID);
+  winston.debug("Test login for user " + req.params.uID);
   var accessToken = uuidV1();
-  res.status(201).json(
+  res.status(201).jsonp(
     {
       "uID" : req.params.uID ,
       "accessToken" : accessToken

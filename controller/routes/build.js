@@ -8,6 +8,7 @@ var winston = require('../../index').logger;
 
 // other units in package
 var auth = require('../auth')
+var records = require('../records')
 
 
 /*
@@ -17,32 +18,44 @@ Not pulling data yet, but will do actual authenticator checks
 For debugging, use GET /test/user/:uID instead
 */
 app.get('/user/:uID', jsonParser, function(req, res) {
-	winston.info("Attempting to get data from " + req.params.uID)
+	winston.verbose("Attempting to get data from " + req.params.uID)
 	// send a 400 error if there isn't any user data uploaded, like auth key
-	if (!req.body.accessToken){
-    winston.error("Body"  + req.body);
-		winston.debug("Request did not have an Access Token included")
-		return res.status(400).json({"error" : "No AT"});
-	}
+	// if (!req.body.accessToken){
+	// 	winston.debug("Request did not have an Access Token included")
+	// 	return res.status(400).jsonp({"error" : "No Access Token"});
+	// }
 	if (!req.body.apiKey){
-    winston.error("Body"  + req.body);
 		winston.debug("Request did not have an API Key included")
-		return res.status(400).json({"error" : "No API Key"});
+		return res.status(400).jsonp({"error" : "No API Key"});
 	}
 
 	// authenticate the accessToken to see if it matches
-	auth.checkAccessToken(req.body.accessToken, req.params.uID, req.body.apiKey, function(successful){
+	//auth.checkAccessToken(req.body.accessToken, req.params.uID, req.body.apiKey, function(successful){
+	auth.checkAPIKey(req.body.apiKey, req.ip, function(successful){
 		if (successful){
 			// authenticator checks out just fine
-			res.setHeader('Content-Type', 'application/json');
-			res.status(201).json({"uID" : req.params.uID, "username" : "Testy"})
+			records.getUserByID(req.params.uID, function(err, doc){
+				if (err){
+					winston.error(err)
+					res.status(500).send("Internal server error while fetching document");
+				}
+				else if (! doc){
+					winston.warn("No user record found for " + req.params.uID);
+					res.status(404).send("User " + req.params.uID + " was not found");
+				}
+				else {
+					winston.info("User record for " + req.params.uID + " accessed");
+					//res.setHeader('Content-Type', 'application/json');
+					res.status(201).jsonp(doc);
+				}
+			})
 			return;
 		}
-		else{
+		if (! successful){
 			// not authenticated -- no userID + accessToken + API Key combination
 			res.status(401).send("Access Token denied");
 		}
-	})
+	});
 })
 
 
