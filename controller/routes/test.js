@@ -4,6 +4,8 @@ var app = express()
 var bodyParser = require ("body-parser")
 var jsonParser = (bodyParser.json())
 const uuidV1 = require('uuid/v1')
+
+// other controllers in this package
 var test_gen = require('../test_gen')
 var winston = require('../../index').logger;
 
