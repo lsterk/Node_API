@@ -36,7 +36,11 @@ function checkAPIKey(apiKey, ipAddr, callback){
 	});
 }
 
-function checkAccessToken(accessToken, uID, apiKey, callback){
+
+/*
+function for checking the agreement of an access token, username, and api key
+*/
+function checkAccessToken(accessToken, username, apiKey, callback){
   MongoClient.connect(mongodb_url, function(err, db) {
 		// Connect to the collection of api keys
 
@@ -44,7 +48,7 @@ function checkAccessToken(accessToken, uID, apiKey, callback){
 		// check to see if the access token exists
 		col.findOne({
       "accessToken" : accessToken,
-      "uID" : uID,
+      "username" : username,
       "apiKey" : apiKey}, function (err, doc){
 			if (!doc) {
         // no document was found, so it wasn't a match
@@ -52,14 +56,16 @@ function checkAccessToken(accessToken, uID, apiKey, callback){
 				callback(false);
         return false; // ends execution
 			}
-			if (err) {
+			else if (err) {
         //winston.error("Error in checking token:" + err);
         callback(false);
         return false; // ends execution
       }
+      else {
       // doc was found and no error uncovered, so must be legit
       callback(true);
       return true; // ends execution
+    }
 		})
 	});
 }
