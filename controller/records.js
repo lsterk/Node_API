@@ -21,8 +21,9 @@ function getUserByID(uID, callback){
 
 		var col = db.collection('records');
 		// check to see if the access token exists
+    // filter out the _id internal field for MongoDB
 		col.findOne({
-      "uID" : uID}, function (err, doc){
+      "uID" : uID}, {'fields' : {'_id' : 0}, function (err, doc){
 			if (!doc) {
         // no document was found, so it wasn't a match
         // err might be null, but we probably don't even care
@@ -63,8 +64,9 @@ function getUserByUsername(username, callback){
 
 		var col = db.collection('records');
 		// check to see if the access token exists
+    // filter out the _id internal field for MongoDB
 		col.findOne({
-      "uName" : username}, function (err, doc){
+      "uName" : username}, {'fields' : {'_id' : 0}}, function (err, doc){
 			if (!doc) {
         // no document was found, so it wasn't a match
         // err might be null, but we probably don't even care
@@ -86,3 +88,4 @@ function getUserByUsername(username, callback){
 }
 
 module.exports.getUserByID = getUserByID;
+module.exports.getUserByUsername = getUserByUsername;
