@@ -3,6 +3,51 @@
 
 **v 0.2**
 
+## User Record Data Structure
+
+User records are cached in a MongoDB collection called "records". The records are generated from CSV dump of the CBORD database, with only a few columns being sent out. The structure of the data is shown below using types, although
+
+```javascript
+// example
+{
+    "_id" : ObjectId("58fa1d6299ceed5978375826"),
+    "mealPlan" : {
+        "planName" : "CD-60 (60 Block Meals)",
+        "max" : 60,
+        "count" : 29,
+        "isWeekly" : false
+    },
+    "name" : "Bryson,Barrett",
+    "firstName" : "Barrett",
+    "uName" : "bb36",
+    "isLiveData" : false,
+    "updated" : ISODate("2017-04-19T10:56:43.388Z"),
+    "bonusBucks" : 2.37,
+    "lastName" : "Bryson",
+    "uID" : "1252391"
+}
+
+// format
+// note that all HTTP replies in JSON format are really just Strings
+{
+    "_id" : ObjectId,
+    "mealPlan" : {
+        "planName" : String,
+        "max" : Number,
+        "count" : Number,
+        "isWeekly" : Boolean
+    },
+    "name" : String,
+    "firstName" : String,
+    "uName" : String,
+    "isLiveData" : Boolean,
+    "updated" : ISODate,
+    "bonusBucks" : 2.37,
+    "lastName" : String,
+    "uID" : String
+}
+
+
 ## Public Actions
 
 ### GET /test
@@ -171,21 +216,66 @@ HTTP Status Code: 401
 ```
 
 
-### GET /user/:uID
+### GET /id/:uID?apiKey=$API_KEY
 
-Retrieves all relevant user data
+Retrieves all relevant user data to the supplied userID, authenticating via
+an API Key provided in the URL.
+
+Note that this is done to conform to HTTP 1.1 standard (GET requests may not
+	have a body) and the Method standard that GET requests are the only request
+	that do not modify server side resources (e.g. edit the user record)
 
 | HTTP Status Code | Status Explanation  |
 | :---------------:  | :---------------- |
 | 200 | Authentication successful, data sent back in body|
-|400 | API Key or AccessToken  not included|
-| 401 | AccessToken did not exist or match supplied uID
+|400 | API Key not included|
+| 401 | ApiKey did not exist or match device IP address
+| 404 | No record could be found for the supplied uID
 
 submission example:
 
 ```javascript
+// request
+curl -X GET http://localhost:5000/id/1252391?apiKey=aaaa
+```
+
+reply Example:
+
+```javascript
 {
-  "accessToken" : String accessToken,
+	"bonusBucks":2.37,
+	"lastName":"Bryson",
+	"firstName":"Barrett",
+	"uName":"bb36",
+	"mealPlan":{
+		"count":29,
+		"isWeekly":true,
+		"max":60
+	},"updated":"2017-04-19T10:56:43.388Z",
+	"isLiveData":false,
+	"name":"Bryson,Barrett",
+	"uID":"1252391"
+}
+```
+
+
+### GET /user/:username
+
+Retrieves all relevant user data to the supplied username
+
+| HTTP Status Code | Status Explanation  |
+| :---------------:  | :---------------- |
+| 200 | Authentication successful, data sent back in body|
+|400 | API Key not included|
+| 401 | ApiKey did not exist or match device IP address
+| 404 | No record could be found for the supplied uID
+
+submission example:
+
+```javascript
+// request
+curl -X GET http://localhost:5000/user/bb35 -d
+{
   "apiKey" : String apiKey
 }
 ```
@@ -194,11 +284,17 @@ reply Example:
 
 ```javascript
 {
-  "uID" : "1403378",
-  "uName" : "ljs34",
-  "name" : "Sterk, Landon",
-  "meals" : 25,
-  "isWeekly": false,
-  "bonusBucks" : 15.44  
+	"bonusBucks":2.37,
+	"lastName":"Bryson",
+	"firstName":"Barrett",
+	"uName":"bb36",
+	"mealPlan":{
+		"count":29,
+		"isWeekly":true,
+		"max":60
+	},"updated":"2017-04-19T10:56:43.388Z",
+	"isLiveData":false,
+	"name":"Bryson,Barrett",
+	"uID":"1252391"
 }
 ```

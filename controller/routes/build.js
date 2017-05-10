@@ -17,21 +17,21 @@ Authenticates the accessToken against the apiKey and user ID
 Not pulling data yet, but will do actual authenticator checks
 For debugging, use GET /test/user/:uID instead
 */
-app.get('/user/:uID', jsonParser, function(req, res) {
+app.get('/id/:uID', jsonParser, function(req, res) {
 	winston.verbose("Attempting to get data from " + req.params.uID)
 	// send a 400 error if there isn't any user data uploaded, like auth key
 	// if (!req.body.accessToken){
 	// 	winston.debug("Request did not have an Access Token included")
 	// 	return res.status(400).jsonp({"error" : "No Access Token"});
 	// }
-	if (!req.body.apiKey){
+	if (!req.query.apiKey){
 		winston.debug("Request did not have an API Key included")
 		return res.status(400).jsonp({"error" : "No API Key"});
 	}
 
 	// authenticate the accessToken to see if it matches
 	//auth.checkAccessToken(req.body.accessToken, req.params.uID, req.body.apiKey, function(successful){
-	auth.checkAPIKey(req.body.apiKey, req.ip, function(successful){
+	auth.checkAPIKey(req.query.apiKey, req.ip, function(successful){
 		if (successful){
 			// authenticator checks out just fine
 			records.getUserByID(req.params.uID, function(err, doc){

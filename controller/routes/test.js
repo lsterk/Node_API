@@ -20,6 +20,11 @@ app.all('/', function(request, response) {
 })
 
 
+app.all('/query', function(req, res){
+  var apiKey = req.query.apiKey;
+  winston.verbose("Query test: " + req.query.apiKey)
+  res.json(req.query);
+})
 /*
 Test method for getting dummy data for a particular user
 Populates all specific fields with randomized data

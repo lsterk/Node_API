@@ -23,7 +23,7 @@ function getUserByID(uID, callback){
 		// check to see if the access token exists
     // filter out the _id internal field for MongoDB
 		col.findOne({
-      "uID" : uID}, {'fields' : {'_id' : 0}, function (err, doc){
+      "uID" : uID}, {'fields' : {'_id' : 0}}, function (err, doc){
 			if (!doc) {
         // no document was found, so it wasn't a match
         // err might be null, but we probably don't even care
@@ -41,7 +41,9 @@ function getUserByID(uID, callback){
         callback(null, doc);
       }
 		})
+    // done with col.findOne()
 	});
+  // connection to MongoDB closed
 }
 
 
