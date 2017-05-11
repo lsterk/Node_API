@@ -9,33 +9,30 @@ var winston = require('../../index').logger;
 var auth = require('../auth')
 var records = require('../records')
 
-var logRequestPath = function(req, res, next){
-	winston.debug(+ req.method + " "+ req.path + " from " + req.ip)
-	next()
+var logRequestPath = function(req, res){
+	// log the result of the API call, as well as the call itself and source IP addr
+	// note that req.path does NOT log any queries, i.e. API keys
+	winston.info(res.statusCode + '\t' + req.method + "\t"+ app.mountpath + req.path + " from " + req.ip)
 }
 
-app.use(logRequestPath);
+//app.use(logRequestPath);
 /*
 getUser command from a kiosk
 Authenticates the apiKey against database
+returns a 400 for missing apiKey
 return a 401 for bad apiKey
 Will return a 404 error for bad user ID
 For debugging, use GET /test/user/:uID instead
 */
-app.get('/id/:uID', jsonParser, function(req, res) {
-	winston.verbose("Attempting to get data from " + req.params.uID)
-	// send a 400 error if there isn't any user data uploaded, like auth key
-	// if (!req.body.accessToken){
-	// 	winston.debug("Request did not have an Access Token included")
-	// 	return res.status(400).jsonp({"error" : "No Access Token"});
-	// }
-	if (!req.body.apiKey){
-		winston.debug("Request did not have an API Key included")
-		return res.status(400).json({"error" : "No API Key"});
+app.get('/id/:uID', jsonParser, function(req, res, next) {
+	if (!req.query.apiKey){
+		//winston.debug("Request did not have an API Key included")
+		res.status(400).json({"error" : "No API Key"});
+		next()
 	}
 
 	// authenticate the api key to see if it matches the supplied value
-	auth.checkAPIKey(req.body.apiKey, req.ip, function(successful){
+	auth.checkAPIKey(req.query.apiKey, req.ip, function(successful){
 		if (successful){
 			// authenticator checks out just fine
 			records.getUserByID(req.params.uID, function(err, doc){
@@ -48,19 +45,22 @@ app.get('/id/:uID', jsonParser, function(req, res) {
 					res.status(404).send("User " + req.params.uID + " was not found");
 				}
 				else {
-					winston.info("User record for " + req.params.uID + " accessed");
-					//res.setHeader('Content-Type', 'application/json');
+					//winston.info("User record for " + req.params.uID + " accessed");
 					res.status(200).json(doc);
 				}
+				// regardless of the result, log teh status code
+				next();
 			})
 			return;
 		}
 		if (! successful){
 			// not authenticated -- no userID + accessToken + API Key combination
+			// console.log("AT denied")
 			res.status(401).send("Access Token denied");
+			// next();
 		}
 	});
-})
+}, logRequestPath);
 
 
 /*
@@ -71,6 +71,8 @@ return a 401 for bad apiKey + access token combo
 Will return a 404 error for bad user ID
 For debugging, use GET /test/user/:uID instead
 */
+// not used in production
+/*
 app.get('/user/:username', jsonParser, function(req, res) {
 	winston.verbose("Web server requested user " + req.params.username)
 	// send a 400 error if there isn't any user data uploaded, like auth key
@@ -115,12 +117,14 @@ app.get('/user/:username', jsonParser, function(req, res) {
 		}
 	});
 })
-
+*/
 
 /*
 POST /login/:username will generate an access Token
 Currently iffy, pending results from the adfs service
 */
+// not used in production
+/*
 app.post('/login/:username', jsonParser, function(req, res) {
 	// check supplied credentials
 	if (!req.body.PIN) return res.sendStatus(400);
@@ -140,6 +144,7 @@ app.post('/login/:username', jsonParser, function(req, res) {
 		res.status(201).json({"uID" : req.params.uID, "accessToken" : accessToken})
 	})
 })
+*/
 
-// export the app so it can be mounted at /build
+// export the app so it can be mounted at /production
 module.exports = app;

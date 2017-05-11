@@ -1,11 +1,11 @@
 # Calvin Information Center API Guide
 **Landon Sterk**
 
-**v 0.2**
+**v 1.0**
 
 ## User Record Data Structure
 
-User records are cached in a MongoDB collection called "records". The records are generated from CSV dump of the CBORD database, with only a few columns being sent out. The structure of the data is shown below using types, although
+User records are cached in a MongoDB collection called "records". The records are generated from CSV dump of the CBORD database, with only a few columns being sent out. The structure of the data is shown below using both example data as well as the data types.
 
 ```javascript
 // example
@@ -46,9 +46,11 @@ User records are cached in a MongoDB collection called "records". The records ar
     "lastName" : String,
     "uID" : String
 }
-
+```
 
 ## Public Actions
+
+Actions that do not require an API key for a server response
 
 ### GET /test
 
@@ -79,7 +81,7 @@ Format of reply:
 ```
 
 example:
-```
+```js
 // request
 curl -X POST http://localhost:5000/test/login/1234
 
@@ -113,7 +115,7 @@ Reply format:
 ```
 Example:
 
-```
+```js
 // request
 curl -X GET http://localhost:5000/test/user/1234
 
@@ -121,12 +123,13 @@ curl -X GET http://localhost:5000/test/user/1234
 //STATUS: 200
 {
   "uID":"1234",
-  "uName":"ljs34",
-  "name":"Sterk,Landon",
+  "uName":"rnd34",
+  "name":"Random_Last, Random_First",
   "mealPlan":
   {
-    "count":51,
-    "isWeekly":false
+    "count": 6,
+    "maxMeals":10
+    "isWeekly": true
     },
   "bonusBucks":7.25,
   "isLiveData":false,
@@ -135,19 +138,94 @@ curl -X GET http://localhost:5000/test/user/1234
 
 ```
 
+### ALL /test/query
+
+Test method for using the query parameters, or passing in queries using the URL
+This method is particularly useful for debugging cases when the queries are misinterpreted due to bad characters: passing the key "apiKey" with the value "is this right?" might seem ok, but this is not safe for a URL.
+
+The query API will return a JSON object of the queries that were passed in, to show how the server interprets them
+
+```js
+// request
+curl -X POST "http://api.calvin.edu:5000/test/query?apiKey=happiness&style=graceful"
+
+//response
+//STATUS: 200
+{
+  "apiKey":"happiness",
+  "style":"graceful"
+}
+```
+
 
 ## Authenticated User Actions
 
 All of the below actions necessitate having an active, valid API Key, and possibly
 more authentication factors (e.g. AccessToken)
 
-### POST /login/:uID
+Really, the most important
+
+### GET production/id/:uID?apiKey=$API_KEY
+
+Retrieves all relevant user data to the supplied userID, authenticating via
+an API Key provided in the URL. This is what the kiosk uses to get user data.
+
+Note that this is done to conform to HTTP 1.1 standard (GET requests may not
+	have a body) and the Method standard that GET requests are the only request
+	that do not modify server side resources (e.g. edit the user record)
+
+This is really the only important method in the whole API. And, it's the only
+command on the production branch.
+
+| HTTP Status Code | Status Explanation  |
+| :---------------:  | :---------------- |
+| 200 | Authentication successful, data sent back in body|
+|400 | API Key not included|
+| 401 | ApiKey did not exist or match device IP address
+| 404 | No record could be found for the supplied uID
+| 500 | Internal server error, check the server logs
+
+submission example:
+
+```js
+// request
+curl -X GET http://localhost:5000/id/1252391?apiKey=aaaa
+```
+
+reply Example:
+
+```js
+{
+	"bonusBucks":2.37,
+	"lastName":"Bryson",
+	"firstName":"Barrett",
+	"uName":"bb36",
+	"mealPlan":{
+		"count":29,
+		"isWeekly":true,
+		"max":60
+	},"updated":"2017-04-19T10:56:43.388Z",
+	"isLiveData":false,
+	"name":"Bryson,Barrett",
+	"uID":"1252391"
+}
+```
+
+## Speculative Future APIs
+
+All of the following API calls were functions that did not make it into the
+final project build. These would be necessary for a web server, but not actually
+used for us. Note that Kiosk code likely uses the build branch of code (mistake)
+but could otherwise be changed
+
+### POST build/login/:uID
 
 To receive an Access Token for a particular user, upload a JSON-style body with
-an API Key and the plain-text PIN of the user:
+an API Key and the plain-text PIN of the user. This hasn't been ever built up, though,
+so don't expect it to work securely...
 
 Request:
-```javascript
+```js
 {
   "apiKey" : String ,
   "PIN" : String
@@ -156,7 +234,7 @@ Request:
 
 Response:
 
-```javascript
+```js
 HTTP Status Code: 201
 {
   "uID" : String ,
@@ -178,7 +256,7 @@ request example:
 
 ```javascript
 {
-  "apiKey" : UUIDV1,
+  "apiKey" : "a valid api key",
   "PIN" : "1453"
 }
 ```
@@ -216,53 +294,13 @@ HTTP Status Code: 401
 ```
 
 
-### GET /id/:uID?apiKey=$API_KEY
 
-Retrieves all relevant user data to the supplied userID, authenticating via
-an API Key provided in the URL.
-
-Note that this is done to conform to HTTP 1.1 standard (GET requests may not
-	have a body) and the Method standard that GET requests are the only request
-	that do not modify server side resources (e.g. edit the user record)
-
-| HTTP Status Code | Status Explanation  |
-| :---------------:  | :---------------- |
-| 200 | Authentication successful, data sent back in body|
-|400 | API Key not included|
-| 401 | ApiKey did not exist or match device IP address
-| 404 | No record could be found for the supplied uID
-
-submission example:
-
-```javascript
-// request
-curl -X GET http://localhost:5000/id/1252391?apiKey=aaaa
-```
-
-reply Example:
-
-```javascript
-{
-	"bonusBucks":2.37,
-	"lastName":"Bryson",
-	"firstName":"Barrett",
-	"uName":"bb36",
-	"mealPlan":{
-		"count":29,
-		"isWeekly":true,
-		"max":60
-	},"updated":"2017-04-19T10:56:43.388Z",
-	"isLiveData":false,
-	"name":"Bryson,Barrett",
-	"uID":"1252391"
-}
-```
-
-
-### GET /user/:username
+### GET build/user/:username
 
 Retrieves all relevant user data to the supplied username
 
+Part of the build group, so it's not actually in full development yet
+
 | HTTP Status Code | Status Explanation  |
 | :---------------:  | :---------------- |
 | 200 | Authentication successful, data sent back in body|
@@ -272,7 +310,7 @@ Retrieves all relevant user data to the supplied username
 
 submission example:
 
-```javascript
+```js
 // request
 curl -X GET http://localhost:5000/user/bb35 -d
 {
@@ -282,7 +320,7 @@ curl -X GET http://localhost:5000/user/bb35 -d
 
 reply Example:
 
-```javascript
+```js
 {
 	"bonusBucks":2.37,
 	"lastName":"Bryson",

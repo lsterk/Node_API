@@ -1,3 +1,7 @@
 #!/bin/bash
-curl -X GET -H "Content-Type: application/json" -d '{"accessToken" : "1234-5678-90ab-cdef", "apiKey" : "happy sunshine"}' http://153.106.112.144:5000/test/user/132
+if [ -z ${PORT+x} ]; then echo "PORT is unset; using default value of 5000"
+		export PORT=5000;
+	else echo "PORT is set to '$PORT'";
+fi
+curl -X GET  http://153.106.112.144:$PORT/test/user/1234567
 echo ''

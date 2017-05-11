@@ -19,7 +19,7 @@ app.all('/', function(request, response) {
   response.send('Test server running')
 })
 
-
+// will echo back any queries in the call
 app.all('/query', function(req, res){
   var apiKey = req.query.apiKey;
   winston.verbose("Query test: " + req.query.apiKey)
@@ -32,11 +32,11 @@ Used for development purposes only
 */
 app.get('/user/:uID', jsonParser, function(req, res) {
   winston.debug("Test data grab for user " + req.params.uID)
-  res.status(200).jsonp(
+  res.status(200).json(
     {
       "uID" : req.params.uID,
-      "uName" : "ljs34",
-      "name" : "Sterk, Landon",
+      "uName" : "rnd34",
+      "name" : "Random_Last, Random_First",
       "mealPlan" : test_gen.randomMealPlan(),
       "bonusBucks" : test_gen.randomBonusBucks(),
       "isLiveData" : false,
@@ -52,7 +52,7 @@ Used for development purposes only
 app.post('/login/:uID', jsonParser, function(req, res){
   winston.debug("Test login for user " + req.params.uID);
   var accessToken = uuidV1();
-  res.status(201).jsonp(
+  res.status(201).json(
     {
       "uID" : req.params.uID ,
       "accessToken" : accessToken
